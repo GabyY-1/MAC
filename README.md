@@ -1,29 +1,40 @@
 # MAC — P1A Maps Studio
 
-Éditeur cartographique 2D pour créer une planète fictive réaliste directement dans le navigateur, sans fond terrestre ni génération automatique.
+Éditeur 2D de cartes fictives réalistes, sur fond maritime vierge, utilisable sur Chromebook dans Chrome.
 
-## Démarrage
+## Lancer
 
-Ouvrir `index.html` dans Chrome, ou activer GitHub Pages (Settings → Pages → Deploy from a branch → main / root).
+Activer **GitHub Pages** dans Settings → Pages → Deploy from a branch → main / root.
 
-## Fonctionnalités V0.1
+## Structure
 
-- Dessin des continents et pays point par point (double-clic ou Entrée pour terminer)
-- Dessin des terres à main levée
-- Villes, routes, fleuves, voies ferrées, frontières maritimes
-- Sélection, déplacement et modification des sommets
-- Modes physique et politique, calques activables
-- Zoom (molette / boutons) et déplacement (outil Déplacer)
-- Annuler et rétablir, raccourci Ctrl+Z
-- Sauvegarde locale, import/export JSON, export SVG et PNG
+| Fichier | Fonction |
+|---|---|
+| `index.html` | Interface et barre d'outils |
+| `css/style.css` | Apparence de l'éditeur |
+| `js/core.js` | État partagé, outils et fonctions communes |
+| `js/render.js` | Dessin vectoriel SVG, calques et propriétés |
+| `js/drawing.js` | Création des objets et des tracés |
+| `js/interactions.js` | Souris, déplacement, sélection, raccourcis |
+| `js/history.js` | Annuler / rétablir |
+| `js/navigation.js` | Zoom et déplacement de la carte |
+| `js/storage.js` | Sauvegarde, import et exports |
 
-## Limites connues
+Les scripts sont chargés dans l'ordre par `defer`, sans étape de compilation. Icônes fournies par [Lucide](https://lucide.dev/) via CDN (connexion nécessaire pour leur affichage).
 
-- V0.1 est un prototype 2D en coordonnées de dessin et non un SIG géoréférencé Mercator.
-- Les frontières communes entre pays ne sont pas encore synchronisées automatiquement.
-- Le rendu politique utilise une coloration simple; les pays sont tracés indépendamment.
-- Le stockage local dépend de l'appareil et du navigateur: exporter des fichiers JSON de sauvegarde régulièrement.
+## Dessiner
 
-## Données
+- **Continent / île** : cliquer pour poser des points, double-cliquer ou appuyer sur Entrée pour fermer.
+- **Main levée** : maintenir le clic puis dessiner et relâcher.
+- **Pays** : dessiner une zone par points.
+- **Route / fleuve** : choisir le type de ligne, tracer les points et terminer.
+- **Ville** : cliquer sur la carte pour poser un point.
+- **Sélection** : glisser un objet ou un sommet pour le modifier.
+- **Zoom** : molette ou boutons +/- ; outil main pour déplacer.
+- **Export JSON** pour une sauvegarde portable du projet; import JSON pour reprendre son édition.
 
-Aucun serveur, inscription ou dépendance externe. Tout se passe dans le navigateur.
+## Notes sur la version actuelle
+
+Cette livraison met en place l'ensemble de ces outils **de base**, mais ne constitue pas encore une version finale validée par des tests navigateur automatisés. Elle ne réalise pas de frontières géométriquement partagées, de courbes de Bézier, de géoréférencement Mercator ni de couche bâtiments/quartiers. Le stockage navigateur est local: exporter régulièrement en JSON.
+
+L'outil ne génère pas de continents ou de pays automatiquement. La géographie reste créée par l'utilisateur.
