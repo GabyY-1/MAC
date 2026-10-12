@@ -1,18 +1,16 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MAC — P1A Maps Studio</title>
-<style>
-:root{font-family:Inter,system-ui,Arial,sans-serif;color:#172329;background:#edf2f5}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer;border:1px solid #d8e2e8;background:white;color:#23404e;border-radius:11px;padding:9px 12px}button:hover{background:#ebf4f8}button.active{background:#d9edf8;border-color:#4697c3;color:#15537a}button:disabled{opacity:.4;cursor:not-allowed}header{height:62px;background:white;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #dce5ea}header strong{font-size:18px}header small{color:#70838e}.grow{flex:1}.app{height:calc(100dvh - 62px);display:grid;grid-template-columns:220px minmax(0,1fr) 235px}.panel{background:white;padding:14px;overflow:auto}.panel:first-child{border-right:1px solid #dce5ea}.panel:last-child{border-left:1px solid #dce5ea}h3{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:#71838b;margin:12px 0 9px}.tool{width:100%;text-align:left;margin:3px 0}.map-area{position:relative;overflow:hidden;background:#5da6cf;touch-action:none}.map-area svg{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}.map-area.dragging svg{cursor:grabbing}.bar{position:absolute;bottom:15px;left:15px;right:15px;display:flex;gap:8px;align-items:center;pointer-events:none}.bar>*{pointer-events:auto}.hint{background:#ffffffed;padding:9px 12px;border:1px solid #dce5ea;border-radius:12px;font-size:12px;color:#526670;max-width:450px}.card{border:1px solid #dce5ea;border-radius:13px;padding:10px;margin:8px 0}.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}input[type=text],input[type=color],select{border:1px solid #dce5ea;border-radius:9px;padding:8px;background:white;width:100%}input[type=color]{height:38px;padding:3px}.small{font-size:12px;color:#71838b}.layer{display:flex;align-items:center;gap:7px;margin:7px 0;font-size:13px}.layer input{width:auto}.object{display:block;width:100%;text-align:left;margin:5px 0;font-size:13px}.object.active{border-color:#4697c3}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.status{color:#4e717b;font-size:12px}#map .item{cursor:pointer}#map .item.selected{filter:drop-shadow(0 0 2px #fff)}#map .ghost{pointer-events:none}#map .vertex{fill:white;stroke:#126c9c;stroke-width:1.5;vector-effect:non-scaling-stroke;cursor:move}.hide{display:none}@media(max-width:780px){.app{grid-template-columns:155px minmax(0,1fr)}.panel:last-child{grid-column:1/-1;border-top:1px solid #dce5ea;max-height:190px}.app{height:auto;min-height:calc(100dvh - 62px)}.map-area{min-height:60vh}header{flex-wrap:wrap;height:auto;padding:10px}} 
-</style></head><body>
-<header><strong>MAC</strong><small>P1A Maps Studio · V0.1</small><div class="grow"></div><button id="undo">↶ Annuler</button><button id="redo">↷ Rétablir</button><button id="save">Enregistrer</button></header>
+<link rel="stylesheet" href="./css/style.css"></head><body>
+<header><strong><i data-lucide="map"></i> MAC</strong><small>P1A Maps Studio · V0.1</small><div class="grow"></div><button id="undo"><i data-lucide="undo-2"></i> Annuler</button><button id="redo"><i data-lucide="redo-2"></i> Rétablir</button><button id="save"><i data-lucide="save"></i> Enregistrer</button></header>
 <div class="app"><aside class="panel">
 <h3>Outils</h3>
-<button class="tool active" data-tool="select">↖ Sélectionner / déplacer</button>
-<button class="tool" data-tool="land">◇ Continent / île (points)</button>
-<button class="tool" data-tool="free">✎ Terre à main levée</button>
-<button class="tool" data-tool="country">▱ Pays (points)</button>
-<button class="tool" data-tool="line">〰 Route / fleuve (points)</button>
-<button class="tool" data-tool="city">● Ville / lieu</button>
-<button class="tool" data-tool="pan">✥ Déplacer la carte</button>
+<button class="tool active" data-tool="select"><i data-lucide="mouse-pointer-2"></i> Sélectionner / déplacer</button>
+<button class="tool" data-tool="land"><i data-lucide="pen-tool"></i> Continent / île (points)</button>
+<button class="tool" data-tool="free"><i data-lucide="pencil"></i> Terre à main levée</button>
+<button class="tool" data-tool="country"><i data-lucide="flag"></i> Pays (points)</button>
+<button class="tool" data-tool="line"><i data-lucide="route"></i> Route / fleuve (points)</button>
+<button class="tool" data-tool="city"><i data-lucide="map-pin"></i> Ville / lieu</button>
+<button class="tool" data-tool="pan"><i data-lucide="hand"></i> Déplacer la carte</button>
 <h3>Éléments</h3>
 <label class="small">Nom<input type="text" id="newName" placeholder="Ex. Continent C1"></label>
 <label class="small">Couleur<input type="color" id="newColor" value="#a6c68e"></label>
@@ -30,59 +28,11 @@
 <h3>Sélection</h3><div id="details" class="small">Clique sur un élément de la carte.</div>
 <h3>Objets</h3><div id="objects"></div>
 <div class="status" id="status">Carte vierge</div></aside></div>
-<script>
-(()=>{'use strict';
-const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
-const groups=['land','country','river','road','rail','border','city'], labels={land:'Terres',country:'Pays',river:'Fleuves',road:'Routes',rail:'Voies ferrées',border:'Frontières maritimes',city:'Villes'};
-const colors={land:'#a6c68e',country:'#e1ba80',river:'#377db8',road:'#f8f7f0',rail:'#464e58',border:'#26658f',city:'#263d48'};
-let state={objects:[],visibility:Object.fromEntries(groups.map(g=>[g,true])),mode:'physical',nextId:1},history=[],future=[],tool='select',selected=null,points=[],drawing=false,mouse=null,drag=null;
-let view={x:0,y:0,w:1200,h:650};const clone=o=>JSON.parse(JSON.stringify(o));
-function snapshot(){history.push(clone(state));if(history.length>80)history.shift();future=[]}
-function updateStatus(s){$('status').textContent=s}
-function setTool(t){tool=t;points=[];drawing=false;selected=null;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));render();$('hint').textContent={select:'Clique pour sélectionner, fais glisser pour déplacer. En mode sélection, déplace aussi les sommets.',land:'Clique pour placer les points du contour. Double-clic pour fermer.',country:'Dessine un pays point par point. Double-clic pour terminer.',free:'Maintiens le clic et trace librement; relâche pour fermer.',line:'Clique pour poser des points, double-clic pour terminer.',city:'Clique pour poser une ville ou un lieu.',pan:'Glisse pour te déplacer. Molette pour zoomer.'}[t]}
-function point(e){const p=$('map').createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform($('map').getScreenCTM().inverse())}
-function svg(tag,attr,parent){const n=document.createElementNS(NS,tag);Object.entries(attr||{}).forEach(([k,v])=>n.setAttribute(k,String(v)));parent.appendChild(n);return n}
-const coords=p=>p.map(z=>z.map(n=>Math.round(n*10)/10).join(',')).join(' ');
-function stroke(t){return t==='river'?'#2f87c8':t==='rail'?'#3f454e':t==='border'?'#2f6e95':'#eaeaea'}
-function render(){const root=$('world');root.replaceChildren();$('draft').replaceChildren();$('sea').setAttribute('fill',state.mode==='physical'?'#69abd0':'#b2d8ec');
-for(const kind of groups){if(!state.visibility[kind])continue;for(const obj of state.objects.filter(o=>o.type===kind)){
-const color=state.mode==='political'&&kind==='land'?'#ece8de':obj.color;let node;
-if(kind==='city'){node=svg('circle',{cx:obj.points[0][0],cy:obj.points[0][1],r:4.5,fill:color,stroke:'white','stroke-width':1.7},root)}
-else if(['land','country'].includes(kind)){node=svg('polygon',{points:coords(obj.points),fill:color,stroke:kind==='land'?'#5d896d':'#5d6170','stroke-width':kind==='land'?1.3:1.5},root)}
-else{node=svg('polyline',{points:coords(obj.points),fill:'none',stroke:stroke(kind),'stroke-width':kind==='river'?3:kind==='road'?4:2,'stroke-dasharray':kind==='rail'?'7 4':kind==='border'?'5 4':'none','stroke-linejoin':'round','stroke-linecap':'round'},root)}
-node.classList.add('item');if(obj.id===selected)node.classList.add('selected');node.addEventListener('pointerdown',e=>onObjectDown(e,obj));
-if(obj.name&&kind==='city')svg('text',{x:obj.points[0][0]+9,y:obj.points[0][1]+4,'font-size':13,fill:'#163441','paint-order':'stroke',stroke:'white','stroke-width':2},root).textContent=obj.name;
-if(obj.id===selected&&tool==='select'){obj.points.forEach((p,i)=>{const v=svg('circle',{cx:p[0],cy:p[1],r:5,class:'vertex'},root);v.addEventListener('pointerdown',e=>{e.stopPropagation();snapshot();drag={kind:'vertex',id:obj.id,i};$('map').setPointerCapture(e.pointerId)})})}
-}}
-if(points.length){svg('polyline',{points:coords(mouse&&tool==='line'?[...points,mouse]:points),fill:'none',stroke:'#143c5c','stroke-width':2,'stroke-dasharray':'5 4'},$('draft'))}
-$('objects').replaceChildren();for(const o of state.objects){const b=document.createElement('button');b.className='object'+(o.id===selected?' active':'');b.textContent=(labels[o.type]||o.type)+' · '+(o.name||'#'+o.id);b.onclick=()=>{selected=o.id;setTool('select');selected=o.id;render()};$('objects').appendChild(b)}
-$('layers').replaceChildren();for(const g of groups){const l=document.createElement('label');l.className='layer';const c=document.createElement('input');c.type='checkbox';c.checked=state.visibility[g];c.onchange=()=>{state.visibility[g]=c.checked;render()};l.append(c,document.createTextNode(labels[g]));$('layers').appendChild(l)}
-const obj=state.objects.find(o=>o.id===selected);$('details').replaceChildren();if(obj){const inp=document.createElement('input');inp.value=obj.name||'';inp.placeholder='Nom de cet élément';inp.onchange=()=>{snapshot();obj.name=inp.value;render()};const del=document.createElement('button');del.textContent='Supprimer';del.onclick=()=>{snapshot();state.objects=state.objects.filter(x=>x.id!==selected);selected=null;render()};$('details').append(inp,del)}else $('details').textContent='Clique sur un élément de la carte.';updateStatus(state.objects.length+' objets · '+state.mode)}
-function add(type,pts){if((type==='land'||type==='country')&&pts.length<3)return;if(type!=='city'&&pts.length<2)return;snapshot();const obj={id:state.nextId++,type,points:clone(pts),name:$('newName').value.trim(),color:['land','country','city'].includes(type)?$('newColor').value:colors[type]};state.objects.push(obj);$('newName').value='';points=[];drawing=false;render()}
-function finish(){if(!points.length)return;add(tool==='line'?$('lineType').value:tool==='free'?'land':tool,points)}
-function onObjectDown(e,obj){if(tool!=='select')return;e.stopPropagation();selected=obj.id;snapshot();drag={kind:'object',id:obj.id,last:point(e)};$('map').setPointerCapture(e.pointerId);render()}
-$('map').addEventListener('pointerdown',e=>{if(e.button!==0)return;const p=point(e);if(tool==='select'){selected=null;render();return}if(tool==='pan'||e.shiftKey){drag={kind:'pan',lastX:e.clientX,lastY:e.clientY};$('map').setPointerCapture(e.pointerId);return}if(tool==='city'){add('city',[[p.x,p.y]]);return}if(tool==='free'){points=[[p.x,p.y]];drawing=true;$('map').setPointerCapture(e.pointerId);return}points.push([p.x,p.y]);render()});
-$('map').addEventListener('pointermove',e=>{const p=point(e);mouse=[p.x,p.y];if(drag){if(drag.kind==='pan'){const r=$('map').getBoundingClientRect();view.x-=(e.clientX-drag.lastX)*view.w/r.width;view.y-=(e.clientY-drag.lastY)*view.h/r.height;drag.lastX=e.clientX;drag.lastY=e.clientY;applyView()}else{const o=state.objects.find(x=>x.id===drag.id);if(!o)return;if(drag.kind==='vertex')o.points[drag.i]=[p.x,p.y];else{const dx=p.x-drag.last.x,dy=p.y-drag.last.y;o.points=o.points.map(v=>[v[0]+dx,v[1]+dy]);drag.last=p}render()}return}if(drawing&&tool==='free'){const prev=points[points.length-1];if(Math.hypot(p.x-prev[0],p.y-prev[1])>3)points.push([p.x,p.y]);render()}else if(points.length)renderDraft()});
-function renderDraft(){const d=$('draft');d.replaceChildren();if(points.length)svg('polyline',{points:coords([...points,mouse]),fill:'none',stroke:'#143c5c','stroke-width':2,'stroke-dasharray':'5 4'},d)}
-$('map').addEventListener('pointerup',()=>{if(drawing&&tool==='free')finish();drawing=false;drag=null});
-$('map').addEventListener('dblclick',e=>{if(!['land','country','line'].includes(tool))return;e.preventDefault();if(points.length>1){const last=points[points.length-1],before=points[points.length-2];if(Math.hypot(last[0]-before[0],last[1]-before[1])<5)points.pop()}finish()});
-document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;if(e.key==='Escape'){points=[];drag=null;render()}if(e.key==='Enter')finish();if(e.key==='Delete'&&selected!==null){snapshot();state.objects=state.objects.filter(o=>o.id!==selected);selected=null;render()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();travel(e.shiftKey?'redo':'undo')}})
-function travel(dir){const from=dir==='undo'?history:future,to=dir==='undo'?future:history;if(!from.length)return;to.push(clone(state));state=from.pop();selected=null;render()}
-$('undo').onclick=()=>travel('undo');$('redo').onclick=()=>travel('redo');document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
-function applyView(){$('map').setAttribute('viewBox',[view.x,view.y,view.w,view.h].join(' '))}
-function zoom(f,x=view.x+view.w/2,y=view.y+view.h/2){const nw=Math.min(5000,Math.max(30,view.w*f)),nh=nw*650/1200;view.x=x-(x-view.x)*nw/view.w;view.y=y-(y-view.y)*nh/view.h;view.w=nw;view.h=nh;applyView()}
-$('map').addEventListener('wheel',e=>{e.preventDefault();const p=point(e);zoom(e.deltaY>0?1.14:.88,p.x,p.y)},{passive:false});
-$('zoomIn').onclick=()=>zoom(.8);$('zoomOut').onclick=()=>zoom(1.25);$('fit').onclick=()=>{view={x:0,y:0,w:1200,h:650};applyView()};
-$('modePhysical').onclick=()=>setMode('physical');$('modePolitical').onclick=()=>setMode('political');function setMode(m){state.mode=m;$('modePhysical').classList.toggle('active',m==='physical');$('modePolitical').classList.toggle('active',m==='political');render()}
-function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
-function save(){try{localStorage.setItem('MAC_P1A_V01',JSON.stringify(state));updateStatus('Enregistré sur cet appareil')}catch{alert('Sauvegarde locale impossible. Exporte ton JSON.')}}$('save').onclick=save;
-$('exportJson').onclick=()=>download('p1a-map.json',JSON.stringify({format:'MAC-P1A',version:1,state},null,2),'application/json');
-$('importJson').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text()),s=data.state||data;if(!Array.isArray(s.objects))throw Error('Format non reconnu');snapshot();state=s;state.visibility||=Object.fromEntries(groups.map(g=>[g,true]));state.nextId||=Math.max(0,...s.objects.map(o=>o.id))+1;selected=null;render()}catch(err){alert('Import impossible : '+err.message)}e.target.value=''};
-function exportMarkup(){const copy=$('map').cloneNode(true);copy.querySelector('#draft').replaceChildren();copy.setAttribute('xmlns',NS);copy.setAttribute('width','1200');copy.setAttribute('height','650');copy.setAttribute('viewBox','0 0 1200 650');return new XMLSerializer().serializeToString(copy)}
-$('exportSvg').onclick=()=>download('p1a-map.svg',exportMarkup(),'image/svg+xml');
-$('exportPng').onclick=()=>{const data=exportMarkup(),url=URL.createObjectURL(new Blob([data],{type:'image/svg+xml'})),im=new Image();im.onload=()=>{const canvas=document.createElement('canvas');canvas.width=2400;canvas.height=1300;canvas.getContext('2d').drawImage(im,0,0,2400,1300);canvas.toBlob(b=>{if(b){const a=document.createElement('a'),u=URL.createObjectURL(b);a.href=u;a.download='p1a-map.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}URL.revokeObjectURL(url)},'image/png')};im.src=url};
-$('reset').onclick=()=>{if(!confirm('Effacer la carte actuelle ? Pense à exporter une sauvegarde JSON.'))return;snapshot();state.objects=[];state.nextId=1;selected=null;render()};
-try{const raw=localStorage.getItem('MAC_P1A_V01');if(raw){const s=JSON.parse(raw);if(Array.isArray(s.objects))state=s}}catch{}
-$('newColor').value=colors.land;$('lineType').onchange=()=>{};setTool('select');render();
-})();
-</script></body></html>
+<script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script defer src="./js/core.js"></script>
+<script defer src="./js/render.js"></script>
+<script defer src="./js/drawing.js"></script>
+<script defer src="./js/interactions.js"></script>
+<script defer src="./js/history.js"></script>
+<script defer src="./js/navigation.js"></script>
+<script defer src="./js/storage.js"></script></body></html>
