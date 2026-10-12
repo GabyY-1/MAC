@@ -1,0 +1,3 @@
+function add(type,pts){if((type==='land'||type==='country')&&pts.length<3)return;if(type!=='city'&&pts.length<2)return;snapshot();const obj={id:state.nextId++,type,points:clone(pts),name:$('newName').value.trim(),color:['land','country','city'].includes(type)?$('newColor').value:colors[type]};state.objects.push(obj);$('newName').value='';points=[];drawing=false;render()}
+function finish(){if(!points.length)return;add(tool==='line'?$('lineType').value:tool==='free'?'land':tool,points)}
+function onObjectDown(e,obj){if(tool!=='select')return;e.stopPropagation();selected=obj.id;snapshot();drag={kind:'object',id:obj.id,last:point(e)};$('map').setPointerCapture(e.pointerId);render()}
